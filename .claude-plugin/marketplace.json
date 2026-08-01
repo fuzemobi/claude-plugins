@@ -1,0 +1,18 @@
+{
+  "name": "fuzemobi-plugins",
+  "description": "Public Claude Code plugins by fuzemobi",
+  "owner": {
+    "name": "fuzemobi",
+    "url": "https://github.com/fuzemobi"
+  },
+  "plugins": [
+    {
+      "name": "doc-extract",
+      "description": "Structural extraction from any document — PDF, DOCX, XLSX, PPTX, CSV, HTML, EPUB — headings, tables, form fields, and reading order instead of raw character dumps.",
+      "source": "./doc-extract",
+      "version": "1.0.0",
+      "homepage": "https://github.com/fuzemobi/claude-plugins",
+      "license": "MIT"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "name": "doc-extract",
+  "description": "Structural extraction from any document — PDF, DOCX, XLSX, PPTX, CSV, HTML, EPUB — headings, tables, form fields, and reading order instead of raw character dumps.",
+  "version": "1.0.0",
+  "author": {
+    "name": "fuzemobi"
+  },
+  "homepage": "https://github.com/fuzemobi/claude-plugins",
+  "repository": "https://github.com/fuzemobi/claude-plugins",
+  "license": "MIT",
+  "keywords": ["pdf", "docx", "xlsx", "extraction", "documents", "tables", "ocr", "structure"]
+}
