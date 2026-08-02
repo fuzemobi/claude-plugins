@@ -8,9 +8,14 @@ Public [Claude Code](https://claude.com/claude-code) plugin marketplace.
 /plugin marketplace add fuzemobi/claude-plugins
 /plugin install doc-extract@fuzemobi-plugins
 /plugin install carrier-tower-research@fuzemobi-plugins
+/plugin install team-mode@fuzemobi-plugins
 ```
 
 ## Plugins
+
+### team-mode
+
+A config-driven multi-agent engineering team: research → plan → work → review → ship, run by a roster of voting specialist agents with domain-scoped vetoes, evidence standards, machine-verified done gates (a `DONE` vote is invalid without a green test-gate line in the transcript), structured context handoffs, and a GitHub-native paper trail (issues, labels, PRs, approval audit comments, tags). 15 slash commands + 2 skills; all project specifics live in one team config — see [team-mode/README.md](team-mode/README.md) and the [example config](team-mode/examples/config.example.json).
 
 ### carrier-tower-research
 

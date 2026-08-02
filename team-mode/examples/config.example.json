@@ -1,0 +1,55 @@
+{
+  "_comment": "Save as ~/.claude/teams/<team-name>/config.json, then point your project at it with <project>/.claude/team.json: {\"team\": \"<team-name>\"}",
+  "name": "my-project",
+  "nonNegotiables": "NON_NEGOTIABLES.md",
+  "personasDir": "~/.claude/teams/my-team/personas",
+  "versionSource": "VERSION",
+
+  "members": [
+    { "agentType": "scrum-master",     "votes": false, "vetoAuthority": [] },
+    { "agentType": "product-owner",    "votes": true,  "vetoAuthority": ["customer-impact", "acceptance-criteria"] },
+    { "agentType": "lead-architect",   "votes": true,  "vetoAuthority": ["system-design", "coupling", "contracts"] },
+    { "agentType": "lead-developer",   "votes": true,  "vetoAuthority": ["code-structure", "dependencies", "logging"] },
+    { "agentType": "senior-developer", "votes": true,  "vetoAuthority": [] },
+    { "agentType": "senior-dba",       "votes": true,  "vetoAuthority": ["schema", "queries", "migrations"] },
+    { "agentType": "qa-security",      "votes": true,  "vetoAuthority": ["merge-readiness", "security"] }
+  ],
+  "consensusRule": "5-of-6 technical agreement + no valid domain-owner veto",
+
+  "machineGate": {
+    "command": "make check",
+    "label": "lint + typecheck + full test suite"
+  },
+
+  "highRiskPaths": ["migrations/", "src/billing/"],
+  "highRiskChange": ["migration", "schema-change", "index-change"],
+  "impactVocabulary": {
+    "customerImpact": "anything a paying customer sees or is billed for",
+    "protectedOutput": "generated invoices and export files"
+  },
+
+  "memory": {
+    "backend": "file",
+    "wing": "my-project",
+    "room": "team"
+  },
+  "memoryRoot": "team-mode/my-project",
+
+  "docGen": {
+    "extractRoutes": "flask",
+    "scanRoots": ["src/"],
+    "cli": "mycli --help"
+  },
+
+  "build": {
+    "prodPolicy": "refuse",
+    "registry": "registry.example.com/my-project",
+    "authCmd": "docker login registry.example.com",
+    "buildCmd": "docker build -t \"${REGISTRY}:v${VERSION}\" . && docker push \"${REGISTRY}:v${VERSION}\"",
+    "verifyCmd": "docker manifest inspect \"${REGISTRY}:v${VERSION}\""
+  },
+
+  "deploy": {
+    "script": "./deploy.sh"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "team-mode",
+  "description": "A config-driven multi-agent engineering team for Claude Code — research → plan → work → review → ship, with structured voting, domain-owner vetoes, machine-verified done gates, context handoffs, and GitHub-native workflow (issues, labels, PRs, releases). Stack-agnostic: all project specifics live in one team config.",
+  "version": "1.0.0",
+  "author": {
+    "name": "fuzemobi"
+  },
+  "homepage": "https://github.com/fuzemobi/claude-plugins",
+  "repository": "https://github.com/fuzemobi/claude-plugins",
+  "license": "MIT",
+  "keywords": ["multi-agent", "team", "workflow", "consensus", "voting", "scrum", "tdd", "code-review", "github", "release", "orchestration"]
+}

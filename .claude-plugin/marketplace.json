@@ -21,6 +21,14 @@
       "version": "1.0.0",
       "homepage": "https://github.com/fuzemobi/claude-plugins",
       "license": "MIT"
+    },
+    {
+      "name": "team-mode",
+      "description": "A config-driven multi-agent engineering team for Claude Code — research → plan → work → review → ship, with structured voting, domain-owner vetoes, machine-verified done gates, context handoffs, and GitHub-native workflow.",
+      "source": "./team-mode",
+      "version": "1.0.0",
+      "homepage": "https://github.com/fuzemobi/claude-plugins",
+      "license": "MIT"
     }
   ]
 }
