@@ -7,9 +7,14 @@ Public [Claude Code](https://claude.com/claude-code) plugin marketplace.
 ```
 /plugin marketplace add fuzemobi/claude-plugins
 /plugin install doc-extract@fuzemobi-plugins
+/plugin install carrier-tower-research@fuzemobi-plugins
 ```
 
 ## Plugins
+
+### carrier-tower-research
+
+Build authoritative cell-tower master lists for any mobile carrier from an MCC/MNC, TADIG, or carrier name — FCC ULS/ASR/FAA/BDC/ECFS, international regulators (Ofcom, BNetzA, ACMA, …), and crowdsourced RF observations (OpenCelliD, CellMapper), merged in an explicit 11-level trust order with per-row provenance. Emits a 29-column CSV plus a reproducible methodology doc; includes bulk-pull, ASR-search, OpenCelliD, and merge scripts. See [carrier-tower-research/README.md](carrier-tower-research/README.md) for the full write-up.
 
 ### doc-extract
 

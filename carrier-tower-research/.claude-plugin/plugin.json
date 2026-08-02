@@ -1,0 +1,12 @@
+{
+  "name": "carrier-tower-research",
+  "description": "Build authoritative cell-tower master lists for any mobile carrier — FCC ULS/ASR/FAA/BDC/ECFS, international regulators, and crowdsourced RF observations, merged in explicit trust order with per-row provenance.",
+  "version": "1.0.0",
+  "author": {
+    "name": "fuzemobi"
+  },
+  "homepage": "https://github.com/fuzemobi/claude-plugins",
+  "repository": "https://github.com/fuzemobi/claude-plugins",
+  "license": "MIT",
+  "keywords": ["telecom", "cell-tower", "fcc", "uls", "asr", "opencellid", "cellmapper", "mcc-mnc", "tadig", "cdr", "tap", "roaming", "geolocation"]
+}

@@ -13,6 +13,14 @@
       "version": "1.0.0",
       "homepage": "https://github.com/fuzemobi/claude-plugins",
       "license": "MIT"
+    },
+    {
+      "name": "carrier-tower-research",
+      "description": "Build authoritative cell-tower master lists for any mobile carrier — FCC ULS/ASR/FAA/BDC/ECFS, international regulators, and crowdsourced RF observations, merged in explicit trust order with per-row provenance.",
+      "source": "./carrier-tower-research",
+      "version": "1.0.0",
+      "homepage": "https://github.com/fuzemobi/claude-plugins",
+      "license": "MIT"
     }
   ]
 }
