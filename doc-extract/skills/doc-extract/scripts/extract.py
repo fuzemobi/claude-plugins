@@ -111,7 +111,10 @@ def extract(path: Path, as_json=False) -> str:
     if ext == ".pdf":
         sys.path.insert(0, str(Path(__file__).parent))
         try:
-            import fitz
+            try:
+                import pymupdf as fitz  # canonical name, no deprecation banner
+            except ImportError:
+                import fitz
         except ImportError:
             sys.exit("PyMuPDF is required for PDFs but not installed: "
                      "run `pip install pymupdf` and re-run.")

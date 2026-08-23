@@ -7,14 +7,30 @@ Usage:
   pdf_structure.py --triage file.pdf   # per-page classification only
   pdf_structure.py --selftest          # build a tiny PDF in memory and verify
 """
+import contextlib
 import json
+import re
 import statistics
 import sys
 
-import fitz  # PyMuPDF
+try:
+    import pymupdf as fitz  # PyMuPDF >= 1.24 canonical name (no deprecation banner)
+except ImportError:
+    import fitz  # PyMuPDF, older releases
+
+
+def find_tables_quiet(page):
+    """page.find_tables(), with PyMuPDF's advisory prints kept off stdout.
+
+    Newer PyMuPDF versions print upgrade hints to stdout, which corrupts
+    machine-read output (--json). Route them to stderr instead.
+    """
+    with contextlib.redirect_stdout(sys.stderr):
+        return page.find_tables()
 
 SCAN_TEXT_THRESHOLD = 20  # chars; below this + has images -> treat page as scanned
 HEADING_RATIO = 1.15      # span size > body_size * ratio -> heading
+COLUMN_SPLIT = re.compile(r"\s{2,}")  # 2+ spaces = column gap in layout-sorted text
 
 
 def body_font_size(doc: fitz.Document) -> float:
@@ -32,10 +48,52 @@ def table_to_markdown(rows: list) -> str:
         return (c or "").replace("\n", " ").strip()
     if not rows:
         return ""
+    width = max(len(r) for r in rows)
+    rows = [list(r) + [""] * (width - len(r)) for r in rows]
     out = ["| " + " | ".join(clean(c) for c in rows[0]) + " |",
-           "|" + "---|" * len(rows[0])]
+           "|" + "---|" * width]
     out += ["| " + " | ".join(clean(c) for c in r) + " |" for r in rows[1:]]
     return "\n".join(out)
+
+
+def borderless_tables(page) -> list:
+    """Fallback for tables drawn without ruling lines (bank/brokerage statements).
+
+    find_tables() needs cell borders; statement-style PDFs rarely draw them, and
+    without this fallback their tables degrade to scrambled paragraphs — the exact
+    failure mode this skill exists to prevent. Columns still appear as runs of 2+
+    spaces in layout-sorted text, and consecutive multi-column lines form a table.
+    Emits the same element shape as the bordered path, plus `rows` (cells as data).
+    """
+    elements = []
+    lines = page.get_text("text", sort=True).splitlines()
+    block = []
+
+    def flush():
+        nonlocal block
+        if not block:
+            return
+        multi = [r for r in block if len(r) >= 2]
+        if len(multi) >= 2:
+            elements.append({"type": "table", "rows": block,
+                             "text": table_to_markdown(block)})
+        else:
+            for r in block:
+                txt = " ".join(r)
+                if txt:
+                    elements.append({"type": "paragraph", "text": txt})
+        block = []
+
+    for ln in lines:
+        cells = [c.strip() for c in COLUMN_SPLIT.split(ln.strip()) if c.strip()]
+        if not cells:
+            flush()
+        elif len(cells) >= 2 or block:
+            block.append(cells)
+        else:
+            elements.append({"type": "paragraph", "text": cells[0]})
+    flush()
+    return elements
 
 
 def extract(doc: fitz.Document) -> list:
@@ -56,11 +114,23 @@ def extract(doc: fitz.Document) -> list:
                              "text": f"[SCANNED PAGE {pno} — no text layer]"})
             continue
 
-        tables = page.find_tables()
+        tables = find_tables_quiet(page)
         table_bboxes = [fitz.Rect(t.bbox) for t in tables]
         for t in tables:
+            rows = t.extract()
             elements.append({"page": pno, "type": "table",
-                             "text": table_to_markdown(t.extract())})
+                             "rows": rows, "text": table_to_markdown(rows)})
+
+        if not table_bboxes:
+            # No bordered tables detected — try the borderless (whitespace-column)
+            # fallback. If it finds table structure, it replaces the block dump
+            # for this page; otherwise fall through to the normal path.
+            fb = borderless_tables(page)
+            if any(e["type"] == "table" for e in fb):
+                for e in fb:
+                    e["page"] = pno
+                elements.extend(fb)
+                continue
 
         # sort=True gives reading order (top-down, left-right within columns)
         for block in page.get_text("dict", sort=True)["blocks"]:
@@ -108,8 +178,8 @@ def triage(doc: fitz.Document) -> str:
     for page in doc:
         text = page.get_text().strip()
         scanned = len(text) < SCAN_TEXT_THRESHOLD and bool(page.get_images())
-        n_tables = len(page.find_tables().tables)
-        n_fields = len(page.widgets() or [])
+        n_tables = len(find_tables_quiet(page).tables)
+        n_fields = len(list(page.widgets() or []))
         lines.append(f"page {page.number + 1}: "
                      f"{'SCANNED (no text layer)' if scanned else f'text ({len(text)} chars)'}"
                      f", tables={n_tables}, form_fields={n_fields}")

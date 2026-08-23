@@ -19,7 +19,7 @@ Auto-routes by extension and emits structured Markdown on stdout (chunk-ready):
 
 | Format | Route | What's preserved |
 |---|---|---|
-| .pdf | PyMuPDF (`pdf_structure.py`) | headings (font-size), GFM tables, form field values, reading order, scanned-page flags |
+| .pdf | PyMuPDF (`pdf_structure.py`) | headings (font-size), GFM tables (bordered via `find_tables`, borderless via whitespace-column fallback), form field values, reading order, scanned-page flags |
 | .docx .html .epub .rtf .odt | `pandoc -t gfm` | native structure — these formats already store it |
 | .xlsx | openpyxl | one GFM table per sheet, computed values |
 | .pptx | stdlib zip/XML | text per slide, slide order |
@@ -27,7 +27,9 @@ Auto-routes by extension and emits structured Markdown on stdout (chunk-ready):
 | .txt .md .json .log | passthrough | already machine-readable |
 | .doc .xls .ppt | refused with convert hint | legacy binary — convert to the x-format first |
 
-`--json` (PDF only) emits tagged elements `{page, type, text}`, `type ∈ heading|paragraph|table|form_field|scanned_page`. Sheets/CSVs cap at 500 rows and **announce** truncation.
+`--json` (PDF only) emits tagged elements `{page, type, text}`, `type ∈ heading|paragraph|table|form_field|scanned_page`. Table elements also carry `rows` — the cell grid as data (list of rows of strings), so downstream code never re-parses the markdown. Sheets/CSVs cap at 500 rows and **announce** truncation.
+
+**Borderless tables** (v1.0.1): `find_tables()` only sees ruled tables. Statement-style PDFs (bank, brokerage, invoices) draw tables with whitespace alignment and no borders — naive extraction turns them into scrambled paragraphs, the exact failure this skill exists to prevent. When a page has no ruled tables, the extractor now falls back to whitespace-column detection (2+ space runs in layout-sorted text; consecutive multi-column lines form a table) and emits the same table elements, `rows` included.
 
 ## Rule zero for PDFs: triage before trusting
 
