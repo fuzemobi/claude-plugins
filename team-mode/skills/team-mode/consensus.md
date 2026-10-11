@@ -30,6 +30,7 @@ A `completion` vote ratifies a green build; it never substitutes for one. Before
 - Confirm the project machine gate (`config.machineGate.command`, labelled `config.machineGate.label`) passed **in this session**. The green exit line must be present in the transcript.
 - Any `DONE` vote cast without that green output is **invalid** and counts as `MORE_WORK` for tally purposes. State it: "agent voted DONE but no gate green in session — counting as MORE_WORK."
 - If the gate is red or absent, the round is not eligible for consensus regardless of votes — loop.
+- The refutation pass must have checked the implementer's trajectory note (`/team-work`). A round with no trajectory note on record isn't eligible either.
 
 This makes verification the agent runs (and re-reads) the stop condition, not agent opinion. The worker that produced the diff is not the one that grades it (see the refutation pass in `/team-work`).
 

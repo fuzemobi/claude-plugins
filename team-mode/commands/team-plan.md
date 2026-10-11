@@ -34,6 +34,8 @@ Takes the Root Cause Brief written by `/team-research` and drafts a GitHub issue
 2. **Lead-architect drafts**:
    - Scope boundary (what this issue does NOT do — non-goals)
    - ADR references or a new-ADR-needed flag
+   - The ponytail ladder for the fix direction: does it need to exist, does the stdlib or platform already do it, does an installed dependency? Name the lowest rung that holds.
+   - Assumptions and edge cases: what the fix takes as given (inputs, timing, data shape, environment) and the edge cases it must handle. The implementer's trajectory note is checked against this list, so an assumption missing here gets flagged later.
 
 3. **QA/Security drafts**:
    - Test-evidence plan (artifacts that will prove "done")
@@ -83,6 +85,14 @@ So that <business outcome>
 
 ## Out of scope
 - <what this issue is NOT doing>
+
+## Assumptions and edge cases
+- Assumes: <input/timing/data/environment the fix relies on>
+- Edge case: <case> → <expected behavior>
+- Simplest rung: <ponytail ladder result, e.g. "existing config row, no new code path">
+
+## Files expected to change
+- <path> — <why>  (the implementer explains any file outside this list in the trajectory note)
 
 ## Schema / data impact
 <if applicable>
