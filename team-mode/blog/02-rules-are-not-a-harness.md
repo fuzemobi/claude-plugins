@@ -22,7 +22,16 @@ I've seen founders treat that as a beginner's problem. It isn't. We had a full w
 
 ## What the loop cost
 
-I'm not going to list the incidents, and I've stopped caring which ones a person caused and which ones an agent caused. The pattern was the same every time. A change passed its tests, read well in review, and went in. Then something downstream broke in a way nobody had tested for: a guard that quietly stopped guarding, a nightly job that reported success after doing nothing, a cleanup that reached further than anyone meant it to. Every time we trusted the pipeline to catch it without a person checking the work, it cost our outsourcing partner real money. At its worst that ran to thousands of dollars a week until someone noticed.
+Here is what that looked like. These are real agent errors from that repo, with our partner's details left out.
+
+- An agent added a regression test with the same name as one that already existed. Python keeps only the last definition, so one of the two tests silently never ran, and the suite still went green.
+- An agent asked to fix one line returned a reformatted, renamed, "improved" file. The actual fix was buried in collateral changes nobody could review. Every change in that repo now runs under strict patch mode: the smallest diff that works, and nothing else.
+- Review agents we spawned in parallel came back idle with no report. One had quietly finished its work. Another had done nothing, then started editing a file the orchestrator was already editing, after we had told it to stand down.
+- The sixth subagent in a review council failed to start, because the machine could only run five at once. The six-member vote could not actually happen. The orchestrator now has to say that plainly instead of reporting a consensus nobody reached.
+- A batch git cleanup put a list of branch names in a shell variable. The agent's shell was zsh, which doesn't split words the way bash does, so the whole list went through as one name and the delete failed. Every batch push or delete now has to confirm how many refs actually changed.
+- A guard in one of our ops scripts ended a pipe with `grep -q` under `set -o pipefail`, which reports failure even when the pattern matches. It inverted two safety checks in a single day. One nightly batch skipped every step it was supposed to run and still reported COMPLETE.
+
+None of these failed loudly. Each one got past something on its way in: a test run, a review, a vote. Every time we trusted the pipeline to catch it without a person checking the work, it cost our outsourcing partner real money. At its worst that ran to thousands of dollars a week until someone noticed.
 
 Every one of those incidents ended with a paragraph added to an instruction file. Each paragraph was correct. Together they became their own problem: every session in that repo now loads around 1,350 lines of instructions before it reads a single line of code. The Google paper has a name for this. Static context is paid for on every call, and too much of it buries the rules that matter under the ones that don't. At one point we pruned tens of thousands of lines in a single commit, and the note we left behind says it plainly: the files were the defect.
 
@@ -38,7 +47,7 @@ The other lesson from our log is that the strongest guardrail is often removing 
 
 ## Trust, but verify. Human or agent.
 
-The audit also changed how I think about blame. It's tempting to sort failures into "the agent did it" and "a person did it," because the first pile makes a good story. It doesn't help. A wrong assumption costs the same whoever typed it.
+The audit also changed how I think about blame. Every error on that list was an agent's, and plenty of ours over the years have been human. Sorting them into piles doesn't change the fix. A wrong assumption costs the same whoever typed it.
 
 So my position now is simple: trust, but verify every review before commit, whoever did the work. A human's change gets the same check as an agent's. The machine gate checks the output against the tests. The trajectory note checks the agent's reading of the problem. And a person reads the result before it goes in, because human judgment is the only check in the loop that knows what the business actually needs and what a mistake will cost. We've gone further in a few places: some tickets that involve production configuration are now labeled human-only, with no agents at all.
 
