@@ -10,6 +10,7 @@ Public [Claude Code](https://claude.com/claude-code) plugin marketplace.
 /plugin install doc-extract@fuzemobi-plugins
 /plugin install carrier-tower-research@fuzemobi-plugins
 /plugin install team-mode@fuzemobi-plugins
+/plugin install fast-jev-compaction@fuzemobi-plugins
 ```
 
 ## Plugins
@@ -17,6 +18,19 @@ Public [Claude Code](https://claude.com/claude-code) plugin marketplace.
 ### team-mode
 
 A config-driven multi-agent engineering team: research → plan → work → review → ship, run by a roster of voting specialist agents with domain-scoped vetoes, evidence standards, machine-verified done gates (a `DONE` vote is invalid without a green test-gate line in the transcript), structured context handoffs, and a GitHub-native paper trail (issues, labels, PRs, approval audit comments, tags). 16 slash commands + 2 skills, plus trajectory checks on every completion, ponytail-enforced KISS (a declared plugin dependency), and an optional code-graph atlas; all project specifics live in one team config — see [team-mode/README.md](team-mode/README.md) and the [example config](team-mode/examples/config.example.json).
+
+### fast-jev-compaction
+
+Replaces Claude Code's built-in compaction summary with verbatim pruning. When context fills up, TypeSafe's Jev model scores every tool call and tool result in one fast request: stale results are truncated to a short head plus a note, stale calls are dropped with their results, and everything kept stays word for word. User and assistant text is never removed or reworded, so file paths, exact errors and constraints survive compaction. It runs on `/compact` and automatically at 60% context, and falls back to the built-in summary when it can't cut at least 25%. Source: [fuzemobi/fast-jev-compaction](https://github.com/fuzemobi/fast-jev-compaction).
+
+Setup (Claude Code 2.1.274+; function hooks are early access):
+
+1. Add `"CLAUDE_CODE_ENABLE_FUNCTION_HOOKS": "1"` under `env` in `~/.claude/settings.json`.
+2. `/plugin install fast-jev-compaction@fuzemobi-plugins`
+3. Store your TypeSafe key as the plugin's sensitive option (kept out of `settings.json`): `echo '{"apiKey":"<key>"}' | claude plugin configure fast-jev-compaction@fuzemobi-plugins --values-stdin`, or set `TYPESAFE_API_KEY` in the environment.
+4. Restart Claude Code or run `/reload-plugins`, then look for the `kept N/M messages` toast after a compaction.
+
+Data note: each compaction sends message text and tool inputs (tool outputs reduced to one-line notes) to `api.typesafe.ai`. Disable it per project with `"enabledPlugins": {"fast-jev-compaction@fuzemobi-plugins": false}` in that repo's `.claude/settings.json`.
 
 ### carrier-tower-research
 

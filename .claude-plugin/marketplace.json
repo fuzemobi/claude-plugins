@@ -29,6 +29,17 @@
       "version": "1.1.0",
       "homepage": "https://github.com/fuzemobi/claude-plugins",
       "license": "MIT"
+    },
+    {
+      "name": "fast-jev-compaction",
+      "description": "Verbatim Jev-guided compaction for Claude Code: TypeSafe's Jev scores every tool call and result, stale ones are dropped or truncated, and everything kept stays word for word instead of being summarized. Requires Claude Code 2.1.274+ with function hooks enabled and a TypeSafe API key.",
+      "source": {
+        "source": "github",
+        "repo": "fuzemobi/fast-jev-compaction"
+      },
+      "version": "0.3.0",
+      "homepage": "https://github.com/fuzemobi/fast-jev-compaction",
+      "license": "MIT"
     }
   ],
   "allowCrossMarketplaceDependenciesOn": [
