@@ -38,11 +38,13 @@ If diff > ~2000 lines: warn the user. Too big for one PR — probably should be 
 
 Spawn each as a subagent at **`model: sonnet`**. Pass the diff output and instruct each to: (a) run `mcp__codegraph__codegraph_impact` on changed symbols before filing findings, and (b) use `mcp__fmx__generate` (Cerebras gpt-oss-120b) for bulk diff summarization and reasoning per the Resource Efficiency rules — verdicts stay native.
 
-- **lead-developer** — code structure, library choices, typing, logging, error handling, test quality.
+- **lead-developer** — code structure, library choices, typing, logging, error handling, test quality. Also runs `/ponytail-review` on the diff and files each finding (`delete:` / `stdlib:` / `native:` / `yagni:` / `shrink:`) as `suggestion`, or `major` when the cut is large. Never `blocker`. Drop any finding that would remove validation, error handling, security, or accessibility.
 - **senior-dba** — any DB or data-pipeline change. Returns `N/A` if none.
 - **lead-architect** — cross-cutting concerns, interface changes, coupling, operational envelope.
 - **qa-security** — coverage per changed line, security checklist, secret scan, dep scan.
-- **product-owner** — does this satisfy the AC? Is partner behavior unchanged unless AC says so?
+- **product-owner** — does this satisfy the AC? Is partner behavior unchanged unless AC says so? Read the trajectory note (`<config.memoryRoot>/<issue#>/work/trajectory`): does any assumption it lists change what the customer gets without the AC saying so?
+
+If the atlas is built, each reviewer runs `/team-atlas affected "<changed symbol>"` for the blast radius alongside `codegraph_impact`.
 
 Note: **senior-developer does NOT review their own code** — they respond to comments.
 

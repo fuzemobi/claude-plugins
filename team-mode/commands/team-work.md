@@ -16,6 +16,8 @@ enabled: true
 - **Code generation (delegate to Cerebras via fmx):** for bulk new or modified code — test suites, refactors, boilerplate, scaffolding — call `mcp__fmx__generate` with `mode="code"`. It routes to gpt-oss-120b on Cerebras (off the Anthropic usage pool) and returns code as text; write it with native Write/Edit and review it. **Native fallback is mandatory** — if it errors, times out, or returns empty/malformed output, do not retry more than once: write the code yourself and continue. **Never delegate** test oracles/assertions, security-relevant checks, or correctness-critical logic — write those natively, every time.
 - **Memory:** Check MemPalace for prior findings on this issue: `mcp__mempalace__mempalace_search query="issue-<N>" wing="<config.memory.wing>"`. Write phase completions with `mcp__mempalace__mempalace_add_drawer`.
 - **This skill runs on `opus`**. Implementation subagents use `sonnet`; linter/test-runner subagents use `haiku`.
+- **Ponytail on:** implement with ponytail active (its default `full` mode; check with `/ponytail`). Stop at the first rung of its ladder that holds: does this need to exist, stdlib, native feature, installed dependency, one line, then the minimum that works. Never cut validation, error handling, security, or accessibility to get there. Mark each deliberate shortcut with a `ponytail:` comment naming its limit and the upgrade path, so `/team-ship` can list it.
+- **Atlas first (if built):** before reading many files, ask the atlas (`/team-atlas query "<question>"` or `/team-atlas affected "<symbol>"`) which files are in play, then read only those.
 
 This skill extends the standard **team‑work** command by automatically creating a Git work‑tree for the feature branch associated with the given issue number before proceeding with the usual workflow.
 
@@ -60,9 +62,23 @@ The gate is the project machine gate — `config.machineGate.command` (labelled 
 - Loop on this: implement → run → read exit code → fix failures → re-run until it passes. The agent closes its own loop; it does not stop on "looks done."
 - If the diff touches any path in `config.highRiskPaths`, or is a `config.highRiskChange` (migration/schema/etc.), the machine gate is **mandatory**. Changes to `config.impactVocabulary.protectedOutput` additionally require PO sign-off (a domain-owner veto lane — read `<config.nonNegotiables>`) — flag it, don't self-approve.
 - **A `DONE` vote is invalid unless the green machine-gate exit line was produced in this session.** No pasted green output = the vote does not count toward consensus (see `team-mode/consensus.md` Step 0).
+- **No gate configured → stop.** If `config.machineGate` is missing, do not run this workflow autonomously. Tell the user, and either help define a gate or proceed one change at a time with the user reviewing each (see team-mode "No gate, no delegation").
+
+### Trajectory note (written by the implementer, before the refutation pass)
+A green gate proves the output matches the tests. It does not prove the agent understood the problem. Before handing off for refutation, the implementer writes this note to team memory at `<config.memoryRoot>/<issue#>/work/trajectory` and keeps it to the facts:
+```markdown
+## Assumptions I made that the plan or ACs don't state
+## Files changed outside the plan's file list (and why)
+## ACs I could not exercise with a test (and why)
+## Edge cases from the issue's "Assumptions and edge cases" section: how each is handled
+```
+An empty section is written as "none", not left out. This is the agent's claim about its own path, and the refutation pass checks it.
 
 ### Refutation pass (fresh-context check — the grader is not the worker)
-After the machine gate is green, spawn ONE fresh subagent (the bundled `/code-review` skill, or `oh-my-claude:critic` / `qa-security` in a clean context) that sees only the diff and the plan/ACs — not the reasoning that produced it. Its task: *"prove this diff breaks `config.impactVocabulary.customerImpact` or `config.impactVocabulary.protectedOutput`, or misses a stated AC — find the case where it's wrong."* **Flag only gaps that affect correctness or the stated requirements; ignore style and hypothetical edge cases that can't occur** (a reviewer told to find gaps always finds some — chasing all of them causes over-engineering). A real correctness/AC failure reopens the completion loop. This is the playbook's adversarial review — the worker never grades its own work.
+After the machine gate is green, spawn ONE fresh subagent (the bundled `/code-review` skill, or `oh-my-claude:critic` / `qa-security` in a clean context) that sees only the diff, the plan/ACs, and the trajectory note — not the reasoning that produced it. It has two jobs.
+
+1. **Check the trajectory.** Is each listed assumption backed by the issue, the code, or the non-negotiables? Does the diff touch files the note doesn't list? Does an unlisted assumption show up in the code? An unsupported assumption that changes behavior counts as a correctness failure.
+2. **Refute the output.** *"Prove this diff breaks `config.impactVocabulary.customerImpact` or `config.impactVocabulary.protectedOutput`, or misses a stated AC — find the case where it's wrong."* **Flag only gaps that affect correctness or the stated requirements; ignore style and hypothetical edge cases that can't occur** (a reviewer told to find gaps always finds some — chasing all of them causes over-engineering). A real correctness/AC failure reopens the completion loop. This is the playbook's adversarial review — the worker never grades its own work.
 
 ## Notes
 - The skill only touches Git; it does **not** automatically push or create a PR. Those steps remain part of the regular team‑work flow.

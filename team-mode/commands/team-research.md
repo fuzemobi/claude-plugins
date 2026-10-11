@@ -47,6 +47,7 @@ For each round:
    - **Model: `sonnet`** — sufficient for investigation; reserve opus for orchestration
    - **Delegate heavy lifting to Cerebras:** use `mcp__fmx__generate` (`mode="summarization"` / `mode="reasoning"`, default gpt-oss-120b) for bulk file digestion and analysis — the vote and cited evidence stay native
    - **Code search: CodeGraph first** — use `mcp__codegraph__codegraph_search`, `codegraph_context`, `codegraph_callers`, `codegraph_impact` before grep or file reads
+   - **Atlas before files (if built)** — the agent runs `/team-atlas query "<its question>"` and `/team-atlas god-nodes` to find which files are in play, then reads those. Give each agent only its slice: the problem, its persona, the non-negotiables for its lane. Never paste whole architecture docs into the prompt.
    - **Orientation: cgdigest first** — for "what does this module do" scoping, the agent may run `cgdigest <dir> --reduce` (Bash) to get a fast cached digest before reading files; cite file:line from CodeGraph/Read for any finding that tips consensus
 2. **Collect returns** — each agent produces a report + a vote (see team-mode skill for format).
 3. **Tally using the consensus rule** — 5-of-6 CONSENSUS + no domain-owner VETO.

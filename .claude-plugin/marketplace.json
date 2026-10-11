@@ -10,7 +10,7 @@
       "name": "doc-extract",
       "description": "Structural extraction from any document — PDF, DOCX, XLSX, PPTX, CSV, HTML, EPUB — headings, tables, form fields, and reading order instead of raw character dumps.",
       "source": "./doc-extract",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "homepage": "https://github.com/fuzemobi/claude-plugins",
       "license": "MIT"
     },
@@ -26,9 +26,12 @@
       "name": "team-mode",
       "description": "A config-driven multi-agent engineering team for Claude Code — research → plan → work → review → ship, with structured voting, domain-owner vetoes, machine-verified done gates, context handoffs, and GitHub-native workflow.",
       "source": "./team-mode",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "homepage": "https://github.com/fuzemobi/claude-plugins",
       "license": "MIT"
     }
+  ],
+  "allowCrossMarketplaceDependenciesOn": [
+    "ponytail"
   ]
 }

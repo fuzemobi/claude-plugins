@@ -13,7 +13,7 @@ you drop one config + one pointer; you never edit these skill files.
 ## Activation
 
 Team mode is live when ANY of these are true:
-- The user types a `/team-*` command (`/team-start`, `/team-research`, `/team-vote`, `/team-status`, `/team-handoff`, `/team-ship`).
+- The user types a `/team-*` command (`/team-start`, `/team-research`, `/team-vote`, `/team-status`, `/team-handoff`, `/team-ship`, `/team-atlas`).
 - Project-level `.claude/CLAUDE.md` declares `team-mode: on` or points to a team config.
 - The user says "spin up the team" or "run this through the team."
 
@@ -32,6 +32,12 @@ accordingly.
    absent, refuse to proceed and tell the user to create it.
 4. **Check for an active team memory** via `config.memory` (see below). If there's
    an in-flight issue, summarize its state before doing anything new.
+5. **Check the gate is enforced, not just written.** If `config.machineGate` is set,
+   look in `<project>/.claude/settings.json` and `settings.local.json` for a `Stop`
+   hook that runs it (directly or via a hook script). If none is registered, tell
+   the user once: "The machine gate is advisory in this repo. No Stop hook runs it."
+   Do the same for any guard script in `<project>/.claude/hooks/` that no settings
+   file references. A hook file nobody registered does nothing.
 
 ## The team
 
@@ -89,6 +95,18 @@ The machine gate (Step 0 in `consensus.md`) and the refutation pass apply to
 doubt, escalate to full council — under-voting a high-impact change is the
 expensive mistake.
 
+**No gate, no delegation.** Both lanes hand work to agents, so both need a
+machine gate. If `config.machineGate` is missing, `/team-work` does not run
+autonomously. Say so, and either help the user define a gate or work change by
+change with the user reviewing each one. Research-only teams (`/team-research`,
+`/team-plan`) don't need a gate.
+
+**Verification has two halves.** The machine gate checks the output. The
+trajectory check (in `/team-work` and `/team-review`) checks that the agent solved
+the problem the plan describes: assumptions it made, files it touched outside the
+plan, and ACs it skipped. A green gate on the wrong understanding of the problem
+is still a failure.
+
 ## Voting
 
 Every voting agent returns exactly this JSON in a fenced block:
@@ -133,6 +151,10 @@ quality degrades. The scrum-master prevents this.
 3. **Memory is the blackboard.** The durable state lives in the memory backend
    named by `config.memory` (backend/wing/room), rooted at `config.memoryRoot`.
    `whats-next.md` (via `/handoff-create`) is the immediate session handoff.
+4. **Give each subagent only its slice.** Pass the diff or files in scope, the
+   plan and ACs, and the non-negotiables that apply to its lane, by name. Don't
+   paste whole CLAUDE.md files, architecture docs, or other agents' findings into
+   a prompt. The agent can read a reference doc when its task needs it.
 
 ### Handoff triggers
 The scrum-master (or an agent itself) initiates a handoff when:
@@ -169,6 +191,36 @@ If you detect high context use on THIS session:
 1. Invoke `/handoff-create` immediately.
 2. Write a team memory (per `config.memory`) summarizing where the team is.
 3. Suggest the user start a fresh session with `/team-start --resume <issue#>`.
+
+## Harness feedback
+
+Most agent failures are harness failures: a vague rule, a missing tool, an
+unregistered hook, a test that doesn't exist. At `/team-ship` (step 12a) the
+scrum-master writes a short retro from this issue's loop and proposes at most one
+harness fix. Prefer a fix that enforces itself (a hook, a test, a config value)
+over new prose in CLAUDE.md, which every session pays for and an agent can still
+ignore. The user approves any change to the harness.
+
+## Companion tools
+
+**Ponytail (required plugin dependency, `ponytail@ponytail`).** Ponytail keeps the
+code an agent writes to what the task needs: no unrequested abstraction, stdlib
+and native features before new dependencies, and never a cut to validation, error
+handling, security, or accessibility. team-mode uses it at three points:
+- `/team-work`: the implementer works with ponytail on (its default `full` mode).
+  A deliberate shortcut gets a `ponytail:` comment that names its limit and the
+  upgrade path.
+- `/team-review`: the lead-developer lens runs `/ponytail-review` on the diff.
+  Its findings are `suggestion` or `major`, never `blocker`. A finding that would
+  remove a safety guard is dropped.
+- `/team-ship`: `/ponytail-debt` lists the `ponytail:` markers this diff added,
+  and the PR body records them, so a deferral is visible instead of forgotten.
+
+**Atlas (optional, `/team-atlas`).** A local code graph built with the `graphify`
+CLI. Agents query it for hubs, paths, and blast radius before they open files, so
+each one reads only its slice. If `graphify` isn't installed, every step that
+mentions the atlas is skipped. Graph output is orientation. Evidence that tips a
+vote is still a file and line number.
 
 ## Non-negotiables
 

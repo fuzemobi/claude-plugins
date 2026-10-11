@@ -87,6 +87,12 @@ Sample output: <representative config.impactVocabulary.protectedOutput snippet �
 - qa-security: DONE — <brief>
 - lead-architect: DONE — <brief>
 
+## Trajectory note
+<from team memory `<config.memoryRoot>/<issue#>/work/trajectory`: assumptions not in the plan, files outside the plan, ACs without a test, and how the refutation pass ruled on each>
+
+## Deferred shortcuts (ponytail debt)
+<`ponytail:` markers this diff added, from `/ponytail-debt` filtered to changed files: file:line, the limit, the upgrade path. "none" if none.>
+
 ## Version bump
 vX.Y.Z (mandatory — see config.nonNegotiables)
 
@@ -227,6 +233,9 @@ The `--auto` flag inspects the merged diff and updates:
 
 If doc updates are needed, they land on `develop` via a follow-up commit `docs: refresh reference docs for vX.Y.Z`.
 
+### 12a. Harness retro (two minutes, after merge)
+Look back over this issue's loop: completion rounds that failed, refutation findings, review comments, anything the user had to correct. Name the one harness gap that caused the most rework (a vague rule, a missing test, an unregistered hook, a tool the agents lacked) and propose ONE fix, preferring one that enforces itself (a hook, a test, a config value) over more prose in CLAUDE.md. Write it to team memory at `<config.memoryRoot>/<issue#>/retro` and show it in the summary. Do not apply it: harness changes go through the user. "No gap found" is a valid answer.
+
 ### 13. Summary to user
 ```
 ✅ Shipped to dev.
@@ -239,6 +248,7 @@ If doc updates are needed, they land on `develop` via a follow-up commit `docs: 
   Issue:        #<N> closed + tracker spreadsheet synced
   Branches:     remote deleted, local deleted — clean state
   Docs:         refreshed (CHANGELOG + API/CLI reference if changed)
+  Retro:        <one proposed harness fix, or "no gap found">
 
 Next:
   - Stage promotion is manual. When ready: /team-build stage
