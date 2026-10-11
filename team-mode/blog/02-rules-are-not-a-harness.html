@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rules Are Not a Harness</title>
+<meta name="description" content="Part 2: forty-six rules, two hooks
+nobody installed, and what Google's new SDLC paper gets right about
+running a team of coding agents.">
+<style>
+:root{--bg:#fbfaf7;--fg:#1d1c1a;--muted:#6b6862;--rule:#e3e0d8;--accent:#9a6b1f;--code:#f0ede6}
+@media (prefers-color-scheme:dark){:root{--bg:#141414;--fg:#e9e6df;--muted:#a19c92;--rule:#2c2b28;--accent:#d9a650;--code:#1f1e1c}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:18px/1.7 Georgia,"Iowan Old Style",serif}
+main{max-width:720px;margin:0 auto;padding:48px 16px 80px}
+.series{font:600 13px/1.4 system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:0 0 12px}
+h1{font:700 2.3rem/1.15 system-ui,sans-serif;margin:0 0 12px;letter-spacing:-.01em}
+h1+p em,h1+p{color:var(--muted)}
+h2{font:700 1.45rem/1.3 system-ui,sans-serif;margin:2.2em 0 .6em}
+a{color:var(--accent)}
+hr{border:0;border-top:1px solid var(--rule);margin:2em 0}
+code{background:var(--code);padding:.1em .35em;border-radius:4px;font-size:.88em}
+pre{background:var(--code);padding:14px 16px;border-radius:8px;overflow-x:auto;font-size:.85em;line-height:1.5}
+pre code{background:none;padding:0}
+li{margin:.4em 0}
+.meta{font:14px/1.5 system-ui,sans-serif;color:var(--muted);border:1px solid var(--rule);border-radius:8px;padding:10px 14px;margin:0 0 28px}
+</style>
+</head>
+<body>
+<main>
+<p class="series">Agentic engineering · Part 2</p>
+<p class="meta">By Polymetis Research Group · October 11,
+2026 · <a href="https://polymetisresearch.medium.com/rules-are-not-a-harness-069e45ca5205">Read on Medium</a></p>
+<h1 id="rules-are-not-a-harness">Rules Are Not a Harness</h1>
+<p><em>Part 2 on agentic engineering. Forty-six rules, two hooks nobody
+installed, and what Google's new SDLC paper gets right about running a
+team of coding agents.</em></p>
+<hr />
+<p>In August we published team-mode, the multi-agent workflow we run our
+own projects on, with one idea at its center: your AI agent shouldn't
+grade its own homework. This week I went back and audited the codebase
+that has leaned on it hardest, a telecom billing pipeline we build and
+run for our outsourcing partner. I expected to find gaps in the agents.
+I found gaps in us.</p>
+<p>The repo has 1,858 commits. 601 of them start with "fix". 539 carry a
+Claude co-author trailer. Next to the code sits a file of 46 numbered
+rules, and almost every one of them has an incident behind it. And in
+<code>.claude/hooks/</code> there were two small scripts: one that
+refuses to let an agent end its turn while the billing golden tests are
+red, and one that blocks the single most dangerous command this project
+has ever run.</p>
+<p>Neither script was registered in any settings file. They had never
+run once.</p>
+<h2 id="two-articles-one-pattern">Two articles, one pattern</h2>
+<p>Two pieces crossed my desk the same week, and they read like a
+diagnosis of that repo.</p>
+<p>The first was a write-up of Google's whitepaper <em>The New SDLC With
+Vibe Coding</em> by Addy Osmani, Shubham Saboo, and Sokratis Kartakis,
+which went out as Day 1 reading for Google's AI Agents Intensive on
+Kaggle in June. Its central claim is that the line between vibe coding
+and agentic engineering is verification. Not the model, not the prompt,
+not the tool. If nothing checks the output deterministically and nothing
+checks how the agent got there, you are vibe coding, however elaborate
+the setup looks. It also reframes the agent as model plus harness: the
+prompts, tools, context, sandboxes, and guardrails around the model. The
+harness is the team's job, and it usually matters more than the
+model.</p>
+<p>The second was Abul Kalam Azad's "The Vibe Coding Trap" in Level Up
+Coding, aimed at founders shipping AI-built MVPs. The part that stuck
+with me is what he calls the re-prompting paradox. A bug appears, the
+error goes back into the chat, and the model patches the symptom it can
+see, often by quietly removing a guard or disabling a check. The patch
+works. Something else breaks. Repeat until nobody can audit the
+code.</p>
+<p>I've seen founders treat that as a beginner's problem. It isn't. We
+had a full workflow, a test gate, and a council of reviewing agents. We
+still lived inside that loop for months. We just had a better word for
+each turn of it: a rule.</p>
+<h2 id="what-the-loop-cost">What the loop cost</h2>
+<p>Here is what that looked like. These are real agent errors from that
+repo, with our partner's details left out.</p>
+<ul>
+<li>An agent added a regression test with the same name as one that
+already existed. Python keeps only the last definition, so one of the
+two tests silently never ran, and the suite still went green.</li>
+<li>An agent asked to fix one line returned a reformatted, renamed,
+"improved" file. The actual fix was buried in collateral changes nobody
+could review. Every change in that repo now runs under strict patch
+mode: the smallest diff that works, and nothing else.</li>
+<li>Review agents we spawned in parallel came back idle with no report.
+One had quietly finished its work. Another had done nothing, then
+started editing a file the orchestrator was already editing, after we
+had told it to stand down.</li>
+<li>The sixth subagent in a review council failed to start, because the
+machine could only run five at once. The six-member vote could not
+actually happen. The orchestrator now has to say that plainly instead of
+reporting a consensus nobody reached.</li>
+<li>A batch git cleanup put a list of branch names in a shell variable.
+The agent's shell was zsh, which doesn't split words the way bash does,
+so the whole list went through as one name and the delete failed. Every
+batch push or delete now has to confirm how many refs actually
+changed.</li>
+<li>A guard in one of our ops scripts ended a pipe with
+<code>grep -q</code> under <code>set -o pipefail</code>, which reports
+failure even when the pattern matches. It inverted two safety checks in
+a single day. One nightly batch skipped every step it was supposed to
+run and still reported COMPLETE.</li>
+</ul>
+<p>None of these failed loudly. Each one got past something on its way
+in: a test run, a review, a vote. Every time we trusted the pipeline to
+catch it without a person checking the work, it cost our outsourcing
+partner real money. At its worst that ran to thousands of dollars a week
+until someone noticed.</p>
+<p>Every one of those incidents ended with a paragraph added to an
+instruction file. Each paragraph was correct. Together they became their
+own problem: every session in that repo now loads around 1,350 lines of
+instructions before it reads a single line of code. The Google paper has
+a name for this. Static context is paid for on every call, and too much
+of it buries the rules that matter under the ones that don't. At one
+point we pruned tens of thousands of lines in a single commit, and the
+note we left behind says it plainly: the files were the defect.</p>
+<p>And here is the uncomfortable part. A rule in a markdown file is a
+request. The agent can skim it, weigh it against a user who sounds in a
+hurry, or lose it in a long context. The two hooks were the opposite:
+deterministic, cheap, and impossible to talk past. We wrote them and
+never wired them up, so our most important rule was enforced by a
+sentence.</p>
+<h2 id="the-harness-is-where-the-leverage-is">The harness is where the
+leverage is</h2>
+<p>The best public evidence for the harness argument comes from
+LangChain. They took their coding agent from 52.8 to 66.5 on Terminal
+Bench 2.0, outside the top 30 to the top 5, without touching the model.
+One of the changes that mattered was a middleware that stops the agent
+right before it declares itself finished and forces a verification pass.
+That is almost exactly the Stop hook sitting unregistered in our
+repo.</p>
+<p>(One note if you read the Medium summary of the Google paper: it
+presents the Terminal Bench jump and the 13.7-point LangChain gain as
+two separate data points. They're the same experiment.)</p>
+<p>The other lesson from our log is that the strongest guardrail is
+often removing the capability. The most dangerous command in that repo
+stopped being a worry on the day we deleted it from the CLI. A banned
+command that no longer exists can't be run by accident, by a tired
+human, or by an agent that read the rule and decided this case was
+different.</p>
+<h2 id="trust-but-verify-human-or-agent">Trust, but verify. Human or
+agent.</h2>
+<p>The audit also changed how I think about blame. Every error on that
+list was an agent's, and plenty of ours over the years have been human.
+Sorting them into piles doesn't change the fix. A wrong assumption costs
+the same whoever typed it.</p>
+<p>So my position now is simple: trust, but verify every review before
+commit, whoever did the work. A human's change gets the same check as an
+agent's. The machine gate checks the output against the tests. The
+trajectory note checks the agent's reading of the problem. And a person
+reads the result before it goes in, because human judgment is the only
+check in the loop that knows what the business actually needs and what a
+mistake will cost. We've gone further in a few places: some tickets that
+involve production configuration are now labeled human-only, with no
+agents at all.</p>
+<p>None of that is anti-agent. Agents co-wrote hundreds of the commits
+in that repo, and they will write more. It's the same discipline we'd
+want from any engineer we couldn't afford to be wrong about.</p>
+<h2 id="what-we-changed-in-team-mode-11">What we changed in team-mode
+1.1</h2>
+<p>We took that audit and turned it into the next release of the plugin.
+The changes are small on purpose.</p>
+<ul>
+<li><strong>The gate has to be wired, not just written.</strong> At
+session start, team-mode checks whether your machine gate actually runs
+from a Stop hook, and whether any script in <code>.claude/hooks/</code>
+is sitting there unregistered. If so, it tells you once.</li>
+<li><strong>No gate, no delegation.</strong> If a project has no machine
+gate, <code>/team-work</code> won't run autonomously. It says so and
+works one reviewed change at a time. Handing work to agents without a
+way to verify it is the paper's definition of vibe coding at scale.</li>
+<li><strong>Trajectory notes.</strong> Before review, the implementer
+writes down the assumptions it made that the plan didn't state, any
+files it touched outside the plan, and any acceptance criteria it
+couldn't test. The fresh-context reviewer checks that note against the
+issue. This is a cheap version of the paper's trajectory evaluation, and
+it targets the 80-percent-looks-right failure directly: a green test
+suite on the wrong reading of the problem.</li>
+<li><strong>Assumptions in the plan.</strong> Every issue now carries an
+"Assumptions and edge cases" section and a list of files expected to
+change, so there's something concrete to compare the trajectory
+against.</li>
+<li><strong>A two-minute harness retro on every ship.</strong> After
+merge, the scrum-master names the one harness gap that caused the most
+rework and proposes one fix, preferring a hook, a test, or a config
+value over more prose. The human approves it. That is how the
+incident-to-rule loop turns into an incident-to-enforcement loop.</li>
+<li><strong>KISS as a tool.</strong> team-mode now depends on ponytail,
+an open-source plugin that pushes the agent toward the smallest solution
+that works without cutting validation, error handling, or security. Its
+own benchmark shows a date picker dropping from 404 lines to 23. Our own
+strict-patch and KISS rules were ponytail written in prose. Now the
+implementer works with it on, a ponytail review is one of the review
+lenses, and deliberate shortcuts get listed in the PR as debt instead of
+disappearing.</li>
+<li><strong>An atlas instead of a wall of docs.</strong> A new
+<code>/team-atlas</code> command builds a local code graph with the
+graphify CLI, using only the syntax tree, with no API calls. On our
+billing repo it built 5,847 nodes and 10,010 edges in about six seconds.
+Agents ask it which files matter for their question and read those,
+instead of loading architecture documents into every prompt.</li>
+</ul>
+<h2 id="three-questions-for-your-own-setup">Three questions for your own
+setup</h2>
+<p>You don't need our plugin to use any of this. If you run coding
+agents on anything that matters, three questions will tell you most of
+what you need to know.</p>
+<ol type="1">
+<li>Is your test gate a hook, or a sentence? If the agent can end its
+turn with the suite red, you're relying on it to want to run the
+tests.</li>
+<li>Does anything check the path, or only the output? An agent that
+misunderstood the problem can still pass every test you wrote for the
+wrong problem.</li>
+<li>Does a person verify every review before commit, for agent work and
+human work alike? If not, your customer is the one who finds the
+mistakes.</li>
+</ol>
+<p>And when something does break, look at what the fix leaves behind. If
+it's usually another paragraph in an instruction file, you're paying
+interest on the same debt the founders in Azad's article are paying.
+They just get the bill sooner.</p>
+<p>We had good rules. What we didn't have, until this week, was a
+harness that made them true, and a habit of checking the work no matter
+who did it.</p>
+<p>team-mode 1.1 is MIT licensed and installs from our marketplace:</p>
+<pre><code>/plugin marketplace add DietrichGebert/ponytail
+/plugin marketplace add fuzemobi/claude-plugins
+/plugin install team-mode@fuzemobi-plugins</code></pre>
+<p>The full source, including both articles in this series, is at
+github.com/fuzemobi/claude-plugins.</p>
+<hr />
+<p>Sources: Addy Osmani, Shubham Saboo, Sokratis Kartakis, <em>The New
+SDLC With Vibe Coding</em> (Google, 2026). Mehmet Özel, "Google's New
+SDLC Guide Draws a Hard Line Between Vibe Coding and Agentic
+Engineering," Data Science Collective (June 26, 2026). Abul Kalam Azad,
+"The Vibe Coding Trap: Why AI-Generated MVPs Are Quietly Bankrupting
+Early-Stage Startups," Level Up Coding (September 25, 2026). LangChain,
+"Improving Deep Agents with harness engineering" (February 2026).
+Dietrich Gebert, ponytail README and agentic benchmark
+(github.com/DietrichGebert/ponytail). Part 1 of this series: "Your AI
+Agent Shouldn't Grade Its Own Homework" (August 2, 2026).</p>
+</main>
+</body>
+</html>
